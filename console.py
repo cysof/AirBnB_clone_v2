@@ -114,17 +114,52 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, args):
-        """ Create an object of any class"""
-        if not args:
+        """Create an object of any class
+        """
+        try:
+            class_name = args.split(" ")[0]
+        except IndexError:
+            pass
+        if not class_name:
+            #check if class_name is missing in command arguments
             print("** class name missing **")
             return
-        elif args not in HBNBCommand.classes:
+        elif class_name not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
+        
+        #spliting argument into a list containing key=value pairs e.g.
+        #create Place city_id = "0001" user_id ="0001" name="My_little_house"
+        all_list = args.split(" ")
+        #create new instance of specified class
+        new_instance = eval(class_name)()
+
+        """
+        Iterate through remaining args in all_list and 
+        split each argument at each index by the equality sign,
+        then go to typecasting it to a tuple then unpack the tuple into
+        variable key and value pair. since each arg will consist of a key and value pair.
+        """
+        for i in range(1, len(all_list)):
+            key, value = tuple(all_list[i].split("="))
+            #checking if the value starts with double quote to identify string
+            if value.startswith('"'):
+                #strip quotes off and replace underscore with space
+                value = value.strip('"').replace('_', ' ')
+            else:
+                #try evaluating value if it doesn't start with quote int/float
+                try:
+                    value = eval(value)
+                except Exception:
+                    print(f"** {value} could not be evaluated **")
+                    pass
+            #check if new_instance has attr of key, set value if it does
+            if hasattr(new_instance, key):
+                setattr(new_instance, key, value)
+        
+        storage.new(new_instance)
         print(new_instance.id)
-        storage.save()
+        new_instance.save()
 
     def help_create(self):
         """ Help information for the create method """
