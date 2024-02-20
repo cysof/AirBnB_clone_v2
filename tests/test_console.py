@@ -25,3 +25,25 @@ class TestHBNBCommand(unittest.TestCase):
         except IOError:
             pass
         cls.HBNB = HBNBCommand()
+    
+    @classmethod
+    def tearDownClass(cls):
+        """HBNBCommand testing teardown"""
+        try:
+            os.rename("tmp", "file.json")
+        except IOError:
+            pass
+        del cls.HBNB
+        if type(models.storage) ==DBStorage:
+            models.storage._DBStorage__session.close()
+    
+    def setUp(self):
+        """Reset FileStorage object dictionary."""
+        FileStorage._FileStorage__objects = {}
+    
+    def tearDown(self):
+        """Delete any created file.json."""
+        try:
+            os.remove("file.json")
+        except IOError:
+            pass
