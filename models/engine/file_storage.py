@@ -8,22 +8,38 @@ class FileStorage:
     __file_path = 'file.json'
     __objects = {}
 
-    def all(self):
+    def all(self, cls=None):
         """Returns a dictionary of models currently in storage"""
-        return FileStorage.__objects
-
+        # if no class is provided, return all stored objects
+        if cls is None:
+            return FileStorage.__objects
+        else:
+            # create empty dictionary to hold filtered objects
+            filtered_objects = {}
+            #iterate through all objects in the __objects dictionary
+            for key, obj in FileStorage.__objects.items():
+                # check if the object is an instance of the provided class
+                if isinstance(obj):
+                    #if object is an instance of the provided class,
+                    # add it to the filtered_objects dictionary
+                    filtered_objects[key] = obj
+                #Return the dictionary containing objects of the specified class
+                return filtered_objects
+            
+          
     def new(self, obj):
         """Adds new object to storage dictionary"""
-        self.all().update({obj.to_dict()['__class__'] + '.' + obj.id: obj})
+        key = obj.to_dict()['__class__'] + '.' + obj.id
+        self.all()[key] = obj
 
     def save(self):
         """Saves storage dictionary to file"""
         with open(FileStorage.__file_path, 'w') as f:
             temp = {}
-            temp.update(FileStorage.__objects)
-            for key, val in temp.items():
+            for key, val in FileStorage.__objects.items():
                 temp[key] = val.to_dict()
             json.dump(temp, f)
+    
 
     def reload(self):
         """Loads storage dictionary from file"""
@@ -48,3 +64,18 @@ class FileStorage:
                         self.all()[key] = classes[val['__class__']](**val)
         except FileNotFoundError:
             pass
+    
+    def delete(self, obj=None):
+        """Deletes an object from __objects if it exists"""
+        #checking if the object is provieded
+        if obj is not None:
+            #generate unique key for the object based on its class and id
+            key = obj.to_dict()['__class__'] + '.' + obj.id
+            #Remove the object from __objects dictionary if the exits
+            #using the generated key; if the key doesn't exist, do nothing
+            FileStorage.__objects.pop(key, None)
+    
+    def close(self):
+        """Calls reload() method for deserializing the JSON file to objects"""
+        self.reload()
+
