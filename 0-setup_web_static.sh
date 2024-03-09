@@ -1,51 +1,35 @@
 #!/usr/bin/env bash
-# Bash script that sets up web servers for the deployment of web static
+# Sets up a web server for deployment of web_static.
 
-# Install Nginx if not already installed
-sudo apt-get -y update
-sudo apt-get -y install nginx
+apt-get update
+apt-get install -y nginx
 
-# Create necessary folders if they don't exist
-sudo mkdir -p /data/web_static/releases/test/
-sudo mkdir -p /data/web_static/shared/
+mkdir -p /data/web_static/releases/test/
+mkdir -p /data/web_static/shared/
+echo "Holberton School" > /data/web_static/releases/test/index.html
+ln -sf /data/web_static/releases/test/ /data/web_static/current
 
-# Create a fake HTML file
-sudo echo "<html>
-  <head>
-  </head>
-  <body>
-    Holberton School
-  </body>
-</html>" | sudo tee /data/web_static/releases/test/index.html
+chown -R ubuntu /data/
+chgrp -R ubuntu /data/
 
-# Create or recreate symbolic link
-sudo ln -sf /data/web_static/releases/test/ /data/web_static/current
-
-# Give ownership of /data/ to the ubuntu user and group
-sudo chown -R ubuntu:ubuntu /data/
-
-# Update Nginx configuration
-config_content="
-server {
+printf %s "server {
     listen 80 default_server;
     listen [::]:80 default_server;
-
-    server_name _;
-
-    location / {
-        add_header X-Served-By $hostname;
-        proxy_pass http://127.0.0.1:5000;
-    }
-
+    add_header X-Served-By $hostname;
+    root   /var/www/html;
+    index  index.html index.htm;
     location /hbnb_static {
         alias /data/web_static/current;
         index index.html index.htm;
     }
-    $config_content
-}"
+    location /redirect_me {
+        return 301 http://github.com/besthor;
+    }
+    error_page 404 /404.html;
+    location /404 {
+      root /var/www/html;
+      internal;
+    }
+}" > /etc/nginx/sites-available/default
 
-# Add the configuration to Nginx default site
-sudo echo "$config_content" | sudo tee /etc/nginx/sites-available/default
-
-# Restart Nginx
-sudo service nginx restart
+service nginx restart
